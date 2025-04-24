@@ -2271,17 +2271,7 @@
             
             // Initialize autocomplete for the "to" location input
             const toLocationInput = document.getElementById('toLocation');
-            autocomplete = new google.maps.places.Autocomplete(toLocationInput, {
-                types: ['geocode'],
-                componentRestrictions: {country: 'vn'} // Restrict to Vietnam if desired
-            });
-            
-            // Also initialize autocomplete for "from" location if needed
-            const fromLocationInput = document.getElementById('fromLocation');
-            new google.maps.places.Autocomplete(fromLocationInput, {
-                types: ['geocode'],
-                componentRestrictions: {country: 'vn'}
-            });
+            autocomplete = new google.maps.places.Autocomplete(toLocationInput);
         }
 
         // Calculate travel time between locations
