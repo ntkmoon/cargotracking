@@ -1230,7 +1230,7 @@
         
         <div class="po-form-container">
             <div class="po-form">
-                <h2 id="poFormTitle">Create Production Order</h2>
+                <h2>Create Production Order</h2>
                 
                 <div class="form-row">
                     <div class="form-label">PO Number:</div>
@@ -1592,7 +1592,6 @@
 
         // Current PO data
         let currentPO = null;
-        let isEditingPO = false;
         
         // Sample orders data with QR codes and order images
         let orders = [
@@ -1947,45 +1946,35 @@
             const total = document.getElementById('total').textContent;
             
             // Check if we're editing an existing PO
-            if (isEditingPO && currentPO) {
-                // Update the existing PO
-                currentPO.supplier = supplierText;
-                currentPO.deliveryDate = deliveryDate;
-                currentPO.shippingAddress = shippingAddress;
-                currentPO.items = items;
-                currentPO.total = total;
-                currentPO.travelTime = travelTime;
-                
-                // Update the orders array
-                const index = orders.findIndex(o => o.poNumber === currentPO.poNumber);
-                if (index !== -1) {
-                    orders[index] = currentPO;
-                }
-                
-                // Reset editing flag
-                isEditingPO = false;
-            } else {
-                // Create a new PO
-                currentPO = {
-                    poNumber,
-                    supplier: supplierText,
-                    deliveryDate,
-                    shippingAddress,
-                    orderDate: orderDate,
-                    items,
-                    total: total,
-                    status: 'delivery',
-                    travelTime: travelTime,
-                    orderImage: `https://via.placeholder.com/400x400?text=Order+${poNumber}`,
-                    qrCodeData: '' // Will be generated below
-                };
-                
-                // Add to orders array
-                orders.unshift(currentPO);
-            }
+            const isEditing = currentPO && currentPO.poNumber === poNumber;
+            
+            // Store the PO data
+            currentPO = {
+                poNumber,
+                supplier: supplierText,
+                deliveryDate,
+                shippingAddress,
+                orderDate: isEditing ? currentPO.orderDate : orderDate, // Keep original order date when editing
+                items,
+                total: total,
+                status: isEditing ? currentPO.status : 'delivery', // Keep existing status when editing
+                travelTime: travelTime,
+                orderImage: isEditing ? currentPO.orderImage : `https://via.placeholder.com/400x400?text=Order+${poNumber}`,
+                qrCodeData: '' // Will be generated below
+            };
             
             // Generate QR code data that will show the order image when scanned
             currentPO.qrCodeData = generateQRCodeData(currentPO);
+            
+            // Update or add to orders array
+            if (isEditing) {
+                const index = orders.findIndex(o => o.poNumber === poNumber);
+                if (index !== -1) {
+                    orders[index] = currentPO;
+                }
+            } else {
+                orders.unshift(currentPO);
+            }
             
             showConfirmation();
         }
@@ -1994,27 +1983,12 @@
         function editPO() {
             if (!currentPO) return;
             
-            // Set editing flag
-            isEditingPO = true;
-            
             // Show the PO creation page
             showPoCreation();
             
-            // Update form title
-            document.getElementById('poFormTitle').textContent = 'Edit Production Order';
-            
             // Fill in the form with the current PO data
             document.getElementById('poNumber').value = currentPO.poNumber;
-            
-            // Set supplier selection
-            const supplierSelect = document.getElementById('supplierSelect');
-            for (let i = 0; i < supplierSelect.options.length; i++) {
-                if (supplierSelect.options[i].text === currentPO.supplier) {
-                    supplierSelect.selectedIndex = i;
-                    break;
-                }
-            }
-            
+            document.getElementById('supplierSelect').value = currentPO.supplier;
             document.getElementById('deliveryDate').value = currentPO.deliveryDate;
             document.getElementById('shippingAddress').value = currentPO.shippingAddress;
             
@@ -2065,15 +2039,6 @@
                 if (addressLines.length > 0) {
                     document.getElementById('toLocation').value = addressLines[addressLines.length - 1];
                 }
-            }
-        }
-
-        // Edit an existing order from the tracking page
-        function editExistingOrder(poNumber) {
-            const order = orders.find(o => o.poNumber === poNumber);
-            if (order) {
-                currentPO = order;
-                editPO();
             }
         }
 
@@ -2172,6 +2137,15 @@
             });
         }
 
+        // Edit an existing order from the tracking page
+        function editExistingOrder(poNumber) {
+            const order = orders.find(o => o.poNumber === poNumber);
+            if (order) {
+                currentPO = order;
+                editPO();
+            }
+        }
+
         // Update order status
         function updateOrderStatus(poNumber, newStatus) {
             const orderIndex = orders.findIndex(order => order.poNumber === poNumber);
@@ -2253,7 +2227,6 @@
 
         // Initialize PO creation page
         function initPOCreation() {
-            document.getElementById('poFormTitle').textContent = 'Create Production Order';
             document.getElementById('poNumber').value = generatePONumber();
             // Set default delivery date to tomorrow
             const tomorrow = new Date();
@@ -2263,8 +2236,6 @@
             document.getElementById('itemsContainer').innerHTML = '';
             // Clear shipping address
             document.getElementById('shippingAddress').value = '';
-            // Reset supplier selection
-            document.getElementById('supplierSelect').selectedIndex = 0;
             // Add first item row
             addItemRow();
             // Reset totals
@@ -2277,8 +2248,6 @@
             document.getElementById('travelTimeResult').textContent = 'Thời gian vận chuyển sẽ được tính toán ở đây';
             // Clear any previous calculated time
             window.calculatedTravelTime = null;
-            // Reset editing flag
-            isEditingPO = false;
         }
 
         // Google Maps variables
@@ -2286,6 +2255,13 @@
         let directionsService;
         let directionsRenderer;
         let geocoder;
+        let autocomplete;
+
+        // Initialize Google Maps when window loads
+        window.onload = function() {
+            initMap();
+            };
+
 
         // Initialize Google Maps
         function initMap() {
@@ -2295,7 +2271,17 @@
             
             // Initialize autocomplete for the "to" location input
             const toLocationInput = document.getElementById('toLocation');
-            const autocomplete = new google.maps.places.Autocomplete(toLocationInput);
+            autocomplete = new google.maps.places.Autocomplete(toLocationInput, {
+                types: ['geocode'],
+                componentRestrictions: {country: 'vn'} // Restrict to Vietnam if desired
+            });
+            
+            // Also initialize autocomplete for "from" location if needed
+            const fromLocationInput = document.getElementById('fromLocation');
+            new google.maps.places.Autocomplete(fromLocationInput, {
+                types: ['geocode'],
+                componentRestrictions: {country: 'vn'}
+            });
         }
 
         // Calculate travel time between locations
@@ -2505,7 +2491,7 @@
                     ];
                     const response = responses[Math.floor(Math.random() * responses.length)];
                     
-                    supplierMessages[currentChatSupplier].push({
+                    supplierMessages[supplierName].push({
                         sender: 'supplier',
                         text: response
                     });
