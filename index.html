@@ -716,7 +716,7 @@
             padding: 20px;
             width: 100%;
         }
-
+        
         /* Classification Bar */
         .classification-bar {
             width: 250px;
@@ -1230,7 +1230,7 @@
         
         <div class="po-form-container">
             <div class="po-form">
-                <h2>Create Production Order</h2>
+                <h2 id="poFormTitle">Create Production Order</h2>
                 
                 <div class="form-row">
                     <div class="form-label">PO Number:</div>
@@ -1239,26 +1239,20 @@
                 
                 <div class="form-row">
                     <div class="form-label">Supplier:</div>
-                    <select class="form-input" id="supplierSelect">
+                    <select class="form-input" id="supplierSelect" onchange="updateSupplierLocation()">
                         <option value="">Select Supplier</option>
                         <option value="supplier1">Nam Phát</option>
-                        <option value="supplier2">Galvanizing jv</option>
-                        <option value="supplier3">Phương Viên</option>
-                        <option value="supplier4">Giang Sơn Thịnh</option>
-                        <option value="supplier5">Quốc tế sao việt</option>
-                        <option value="supplier6">Đức thành</option>
-                        <option value="supplier7">Nam hải</option>
+                        <option value="supplier2">Phương Viên</option>
+                        <option value="supplier3">Quốc tế sao việt</option>
+                        <option value="supplier4">Galvanizing jv</option>
+                        <option value="supplier5">Đức thành</option>
+                        <option value="supplier6">Giang Sơn Thịnh</option>
                     </select>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-label">Delivery Date:</div>
                     <input type="date" class="form-input" id="deliveryDate">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-label">Shipping Address:</div>
-                    <textarea class="form-textarea" id="shippingAddress" placeholder="Enter full shipping address including recipient name, company, street, city, state, postal code, and country"></textarea>
                 </div>
 
                 <div class="items-section">
@@ -1285,15 +1279,14 @@
                     <h3>Delivery Time Calculation</h3>
                     <div class="location-row">
                         <div class="location-label">From Location:</div>
-                        <input type="text" class="location-input" id="toLocation" placeholder="Enter delivery address">
+                        <input type="text" class="location-input" id="fromLocation" placeholder="Supplier address will be auto-filled">
                     </div>
                     <div class="location-row">
                         <div class="location-label">To Location:</div>
-                        <input type="text" class="location-input" id="fromLocation" value="số 15 đường An Trì, Phường Hùng Vương, Quận Hồng Bàng, thành phố Hải Phòng" readonly>
+                        <input type="text" class="location-input" id="toLocation" value="số 15 đường An Trì, Phường Hùng Vương, Quận Hồng Bàng, thành phố Hải Phòng" readonly>
                     </div>
-                    <button class="calculate-btn" onclick="calculateTravelTime()">Calculate Travel Time</button>
                     <div class="travel-time-result" id="travelTimeResult">
-                        Travel time will be calculated here
+                        Direct travel time will be displayed here when supplier is selected
                     </div>
                 </div>
                 
@@ -1335,12 +1328,6 @@
                     <div class="detail-row">
                         <div class="detail-label">Order Date:</div>
                         <div class="detail-value" id="confirmationOrderDate"></div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Shipping Address:</div>
-                        <div class="detail-value">
-                            <div class="shipping-address" id="confirmationShippingAddress"></div>
-                        </div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">Estimated Travel Time:</div>
@@ -1491,62 +1478,58 @@
     </div>
 
     <script>
-        // Sample inventory data with Vietnamese characters
-        const inventoryItems = [
-            { id: 'item1', name: 'Mạ kẽm nhúng nóng thép khe co giãn', price:4900},
-            { id: 'item2', name: 'Mạ kẽm nhúng nóng tấm thép đệm ray 220', price: 4900 },
-            { id: 'item3', name: 'Mạ kẽm nhúng nóng kẽm nhúng nóng tấm thép đệm ray 370', price: 4900 },
-            { id: 'item4', name: 'Mạ kẽm nhúng nóng Tấm Panel hở', price:4900 },
-            { id: 'item5', name: 'Mạ kẽm nhúng nóng thép V50', price:4900 },
-            { id: 'item6', name: 'Mạ kẽm nhúng nóng Kết cấu thép (phụ kiện tang cáp)', price:4900 },
-            { id: 'item7', name: 'Mạ kẽm nhúng nóng', price:5300 },
-            { id: 'item8', name: 'Mạ kẽm nhúng nóng V75', price:5300 },
-            { id: 'item9', name: 'Mạ kẽm nhúng nóng Thép tấm', price:4900 },
-            { id: 'item10', name: 'Mạ kẽm nhúng nóng Thép', price:5300 },
-            { id: 'item11', name: 'Mạ kẽm nhúng nóng Thép V dập', price:5300 },
-            { id: 'item12', name: 'Mạ kẽm nhúng nóng Tấm thép đệm ray', price:4900 },
-            { id: 'item13', name: 'Mạ kẽm nhúng nóng Kết cấu thép (phụ kiện tang cáp)', price:4900 }
-        ];
-
-        // Supplier data with products (Vietnamese names)
+        // Supplier data with products (Vietnamese names) and travel times
         const suppliers = [
             {
                 id: 'supplier1',
-                name: 'Công Ty TNHH Tiếp Vận Nam Phát',
+                name: 'Nam Phát',
                 contact: 'Đỗ Hoàng Long',
                 email: 'namphatlogistic@gmail.com',
                 phone: '0225 382 5393',
                 address: 'Tầng 3 Tòa nhà Hải Minh,ĐB Nguyễn Bỉnh Khiêm, Phường Đông Hải 2, Quận Hải An, Tp. Hải Phòng, Hải Phòng',
+                travelTime: '35 phút',
                 products: [
-                    { model: 'NP-001', name: 'Mạ kẽm nhúng nóng thép khe co giãn', description: 'Thép mạ kẽm chất lượng cao', price: 4900 },
-                    { model: 'NP-002', name: 'Tấm thép đệm ray 220', description: 'Tấm thép đệm ray kích thước 220', price: 4900 },
-                    { model: 'NP-003', name: 'Thép V50', description: 'Thép chữ V kích thước 50', price: 4900 }
+                    { id: 'np1', model: '', name: 'Lập là', description: '10lyx520x3420', price: 2220037.50 },
+                    { id: 'np2', model: '', name: 'Lập là', description: '10lyx320x3320', price: 1326325.00 },
+                    { id: 'np3', model: '', name: 'Lập là', description: '10lyx100x3400', price: 424331.25 },
+                    { id: 'np4', model: '', name: 'Lập là', description: '10lyx100x2000', price: 247679.17 },
+                    { id: 'np5', model: '', name: 'Lập là', description: '10ly x 93 x 3300', price: 382925.00 },
+                    { id: 'np6', model: '', name: 'Lập là', description: '10ly x 93 x 1800', price: 208687.50 },
+                    { id: 'np7', model: '', name: 'Lập là', description: '10ly x 140 x 3420', price: 597575.00 },
+                    { id: 'np8', model: '', name: 'Lập là', description: '10ly x 140 x 535', price: 93467.71 },
+                    { id: 'np9', model: '', name: 'Lập là', description: '10ly x 140 x 492', price: 86014.58 },
+                    { id: 'np10', model: '', name: 'Lập là', description: '10ly x 140 x 408', price: 71329.17 },
+                    { id: 'np11', model: '', name: 'Lập là', description: '10ly x 140 x 1980', price: 345825.00 }
                 ]
             },
             {
                 id: 'supplier2',
-                name: 'CÔNG TY TNHH CAO SU VÀ THƯƠNG MẠI PHƯƠNG VIÊN',
+                name: 'Phương Viên',
                 contact: 'Trần Văn Đức',
                 email: 'phuongviencaosu@gmail.com',
                 phone: '0225 373 1702',
                 address: 'số 81 đường An Đà, Ngô Quyền, Hải Phòng',
+                travelTime: '40 phút',
                 products: [
-                    { model: 'PV-101', name: 'Mạ kẽm nhúng nóng Tấm Panel hở', description: 'Tấm Panel hở mạ kẽm', price: 4900 },
-                    { model: 'PV-102', name: 'Thép V75', description: 'Thép chữ V kích thước 75', price: 5300 },
-                    { model: 'PV-103', name: 'Thép tấm', description: 'Thép tấm các loại', price: 4900 }
+                    { id: 'pv1', model: 'SS400', name: 'Thép tấm Q235B/SS400', description: '20x1500x5980mm', price: 22036690.48 },
+                    { id: 'pv2', model: 'Q355B', name: 'Thép cuộn cán nóng', description: '1.2 x 600', price: 400666.67 },
+                    { id: 'pv3', model: '', name: 'Thép cuộn cán nóng', description: '25x2200', price: 58275000.00 }
                 ]
             },
             {
                 id: 'supplier3',
-                name: 'Công ty CP quốc tế Sao Việt ',
+                name: 'Quốc tế Sao Việt',
                 contact: 'Trần Duy Khánh',
                 email: 'kinhdoanh1@vinastar.com.vn',
                 phone: '0243 376 6611',
                 address: 'Cụm CN Hà Bình Phương, xã Hà Hồi, huyện Thường Tín, TP Hà Nội',
+                travelTime: '3 giờ',
                 products: [
-                    { model: 'SV-201', name: 'Mạ kẽm nhúng nóng Thép V dập', description: 'Thép V dập mạ kẽm', price: 5300 },
-                    { model: 'SV-202', name: 'Tấm thép đệm ray 370', description: 'Tấm thép đệm ray kích thước 370', price: 4900 },
-                    { model: 'SV-203', name: 'Kết cấu thép (phụ kiện tang cáp)', description: 'Phụ kiện kết cấu thép cho tang cáp', price: 4900 }
+                    { id: 'sv1', model: '', name: 'Tấm inox 304', description: '20x1500x6000mm', price: 84337499.88 },
+                    { id: 'sv2', model: '', name: 'Thép chịu mài mòn', description: '6x1250x2500', price: 10360000.00 },
+                    { id: 'sv3', model: '', name: 'Thép chịu mài mòn', description: '50x2000x4000', price: 314000000.00 },
+                    { id: 'sv4', model: '', name: 'Hộp thép đen', description: '0.8x3000', price: 124300.00 },
+                    { id: 'sv5', model: '', name: 'Hộp thép đen', description: '5x12000', price: 141309.09 }
                 ]
             },
             {
@@ -1556,23 +1539,33 @@
                 email: 'info@vcoating.vn',
                 phone: '0321 628 1999',
                 address: 'KCN Dệt May Phố Nối, Xã Liêu Xá, Huyện Yên Mỹ, Tỉnh Hưng Yên',
+                travelTime: '2 giờ 15 phút',
                 products: [
-                    { model: 'GV-201', name: 'Mạ kẽm  nóng Thép V dập', description: 'Thép V dập mạ kẽm', price: 5300 },
-                    { model: 'GV-202', name: 'Tấm thép ray 370', description: 'Tấm thép đệm ray kích thước 370', price: 4900 },
-                    { model: 'GV-203', name: 'Kết cấu thép', description: 'Phụ kiện kết cấu thép cho tang cáp', price: 4900 }
+                    { id: 'gv1', model: '', name: 'Mạ kẽm nhúng nóng thép khe co giãn', description: 'V50x50x5x1500', price: 4900.00 },
+                    { id: 'gv2', model: '', name: 'Mạ kẽm nhúng nóng tấm thép đệm ray 220', description: '', price: 4900.00 },
+                    { id: 'gv3', model: '', name: 'Mạ kẽm nhúng nóng kẽm nhúng nóng tấm thép đệm ray 370', description: '', price: 4900.00 },
+                    { id: 'gv4', model: '', name: 'Mạ kẽm nhúng nóng Tấm Panel hở', description: '1500x2200x165', price: 4900.00 },
+                    { id: 'gv5', model: '', name: 'Mạ kẽm nhúng nóng thép V50', description: '', price: 4900.00 },
+                    { id: 'gv6', model: '', name: 'Mạ kẽm nhúng nóng Kết cấu thép (phụ kiện tang cáp)', description: '', price: 4900.00 },
+                    { id: 'gv7', model: '', name: 'Mạ kẽm nhúng nóng', description: 'V50x50x5', price: 5300.00 },
+                    { id: 'gv8', model: '', name: 'Mạ kẽm nhúng nóng', description: 'V75x75x5', price: 5300.00 },
+                    { id: 'gv9', model: '', name: 'Mạ kẽm nhúng nóng Thép tấm', description: '5x100x6000', price: 4900.00 },
+                    { id: 'gv10', model: '', name: 'Mạ kẽm nhúng nóng Thép', description: 'V100x100x10x6000', price: 5300.00 },
+                    { id: 'gv11', model: '', name: 'Mạ kẽm nhúng nóng Thép V dập', description: '50x50x6x3000', price: 5300.00 },
+                    { id: 'gv12', model: '', name: 'Mạ kẽm nhúng nóng Tấm thép đệm ray', description: '220x20', price: 4900.00 },
+                    { id: 'gv13', model: '', name: 'Mạ kẽm nhúng nóng Kết cấu thép (phụ kiện tang cáp)', description: '', price: 4900.00 }
                 ]
             },
             {
                 id: 'supplier5',
-                name: 'Công ty TNHH CƠ KHÍ ĐỨC THÀNH ',
+                name: 'CÔNG TY TNHH CK ĐỨC THANH',
                 contact: 'Đặng Hải Yến',
                 email: 'cokhiducthanh@gmail.com',
                 phone: '0912 273 216',
                 address: 'Khu 7 Tầng, Văn Miếu Đường Lâm, Thị Xã Sơn Tây, Hà Nội',
+                travelTime: '3 giờ 30 phút',
                 products: [
-                    { model: 'SV-201', name: 'Mạ kẽm nhúng nóng Thép V dập', description: 'Thép V dập mạ kẽm', price: 5300 },
-                    { model: 'SV-202', name: 'Tấm thép đệm ray 370', description: 'Tấm thép đệm ray kích thước 370', price: 4900 },
-                    { model: 'SV-203', name: 'Kết cấu thép (phụ kiện tang cáp)', description: 'Phụ kiện kết cấu thép cho tang cáp', price: 4900 }
+                    { id: 'dt1', model: 'S45C', name: 'Bulong M72x850', description: '(ren dài 120, mạ kẽm nhúng nóng phần ren)', price: 830000.00 }
                 ]
             },
             {
@@ -1582,16 +1575,17 @@
                 email: 'kinhdoanh1@vinastar.com.vn',
                 phone: '0909 185 797',
                 address: '15/23 đường TL50, KP2, P.Thạnh Lộc, Q.12, TP.Hồ Chí Minh',
+                travelTime: '35 giờ',
                 products: [
-                    { model: 'SV-201', name: 'Mạ kẽm nhúng nóng Thép V dập', description: 'Thép V dập mạ kẽm', price: 5300 },
-                    { model: 'SV-202', name: 'Tấm thép đệm ray 370', description: 'Tấm thép đệm ray kích thước 370', price: 4900 },
-                    { model: 'SV-203', name: 'Kết cấu thép (phụ kiện tang cáp)', description: 'Phụ kiện kết cấu thép cho tang cáp', price: 4900 }
+                    { id: 'gst1', model: '', name: 'Ty ren 1 đầu ren', description: 'M20x150 ( ren dài 30, phần ko ren D20 )', price: 30000.00 },
+                    { id: 'gst2', model: '', name: 'Bộ bulong inox 304', description: 'ống ren D74.5, M50x150 + bulong ren suốt M50x250', price: 970000.00 }
                 ]
             }
         ];
 
         // Current PO data
         let currentPO = null;
+        let isEditingPO = false;
         
         // Sample orders data with QR codes and order images
         let orders = [
@@ -1606,14 +1600,14 @@
                 qrCodeData: '',
                 orderImage: 'https://via.placeholder.com/400x400?text=Order+PO-2023-1001',
                 items: [
-                    { itemName: 'Mạ kẽm nhúng nóng thép khe co giãn', quantity: 10, price: 4900, total: 49000 },
-                    { itemName: 'Tấm thép đệm ray 220', quantity: 20, price: 4900, total: 98000 }
+                    { itemName: 'Lập là (10lyx520x3420)', quantity: 10, price: 2220037.50, total: 22200375.00 },
+                    { itemName: 'Lập là (10lyx320x3320)', quantity: 20, price: 1326325.00, total: 26526500.00 }
                 ],
                 travelTime: '2 giờ 30 phút'
             },
             {
                 poNumber: 'PO-20241203-2302',
-                supplier: 'Galvanizing JV',
+                supplier: 'CÔNG TY TNHH TV GALVANIZING JV',
                 orderDate: '2024-11-18',
                 deliveryDate: '2024-12-03',
                 shippingAddress: 'KCN Dệt May Phố Nối, Xã Liêu Xá, Huyện Yên Mỹ, Tỉnh Hưng Yên',
@@ -1622,7 +1616,7 @@
                 qrCodeData: '',
                 orderImage: 'https://via.placeholder.com/400x400?text=Order+PO-2023-1002',
                 items: [
-                    { itemName: 'Mạ kẽm nhúng nóng Tấm Panel hở', quantity: 50, price: 4900, total: 245000 }
+                    { itemName: 'Mạ kẽm nhúng nóng Tấm Panel hở (1500x2200x165)', quantity: 50, price: 4900.00, total: 245000.00 }
                 ],
                 travelTime: '3 giờ 15 phút'
             },
@@ -1637,13 +1631,13 @@
                 qrCodeData: '',
                 orderImage: 'https://via.placeholder.com/400x400?text=Order+PO-2023-1003',
                 items: [
-                    { itemName: 'Thép V dập', quantity: 40, price: 5300, total: 212000 }
+                    { itemName: 'Thép chịu mài mòn (50x2000x4000)', quantity: 40, price: 314000000.00, total: 12560000000.00 }
                 ],
                 travelTime: '4 giờ'
             },
             {
                 poNumber: 'PO-20240714-1001',
-                supplier: 'Giang Sơn Thịnh',
+                supplier: 'Công ty TNHH đầu tư thương mại thép Giang Sơn Thịnh',
                 orderDate: '2024-05-22',
                 deliveryDate: '2024-06-12',
                 shippingAddress: '15/23 đường TL50, KP2, P.Thạnh Lộc, Q.12, TP.Hồ Chí Minh',
@@ -1652,7 +1646,7 @@
                 qrCodeData: '',
                 orderImage: 'https://via.placeholder.com/400x400?text=Order+PO-2023-1004',
                 items: [
-                    { itemName: 'Thép tấm', quantity: 25, price: 4900, total: 122500 }
+                    { itemName: 'Ty ren 1 đầu ren (M20x150)', quantity: 25, price: 30000.00, total: 750000.00 }
                 ],
                 travelTime: '2 giờ 45 phút'
             }
@@ -1662,29 +1656,19 @@
         let currentChatSupplier = null;
         const supplierMessages = {
             'Global Suppliers Inc.': [
-                { sender: 'supplier', text: 'Hello! How can we help you today?' }
+                { sender: 'supplier', text: 'Xin chào! Chúng tôi có thể giúp gì cho bạn?' },
+                { sender: 'user', text: 'Tôi muốn hỏi về tình trạng đơn hàng PO-2023-1001' }
             ],
             'Oceanic Imports': [
-                { sender: 'supplier', text: 'Welcome to Oceanic Imports. What do you need?' }
+                { sender: 'supplier', text: 'Chào bạn! Bạn cần thông tin gì từ chúng tôi?' }
             ],
             'Mountain Trading Co.': [
-                { sender: 'supplier', text: 'Thanks for contacting Mountain Trading Co.' }
+                { sender: 'supplier', text: 'Cảm ơn bạn đã liên hệ với Mountain Trading Co.' }
             ],
             'Continental Exports': [
-                { sender: 'supplier', text: 'Continental Exports at your service!' }
+                { sender: 'supplier', text: 'Xin chào! Chúng tôi sẵn sàng hỗ trợ bạn.' }
             ]
         };
-
-        // Generate QR code data for sample orders
-        function initializeSampleOrders() {
-            orders.forEach(order => {
-                // Generate a URL that would display the order image when scanned
-                order.qrCodeData = generateQRCodeData(order);
-            });
-        }
-
-        // Initialize sample orders with QR code data
-        initializeSampleOrders();
 
         // Generate PO number
         function generatePONumber() {
@@ -1773,8 +1757,6 @@
                 <p><strong>Nhà cung cấp:</strong> ${order.supplier}</p>
                 <p><strong>Ngày đặt hàng:</strong> ${formatDate(order.orderDate)}</p>
                 <p><strong>Ngày giao hàng:</strong> ${formatDate(order.deliveryDate)}</p>
-                <p><strong>Địa chỉ giao hàng:</strong></p>
-                <p style="white-space: pre-line;">${order.shippingAddress}</p>
                 <p><strong>Thời gian vận chuyển ước tính:</strong> ${order.travelTime || 'Không tính toán'}</p>
                 <p><strong>Trạng thái:</strong> <span class="${order.status === 'completed' ? 'status-completed' : 
                                                          order.status === 'delivery' ? 'status-delivery' : 'status-canceled'}">
@@ -1788,7 +1770,7 @@
             
             order.items.forEach(item => {
                 detailsHTML += `
-                    <li>${item.itemName} - Số lượng: ${item.quantity} - Giá: ${item.price} - Tổng: ${item.total}</li>
+                    <li>${item.itemName} - Số lượng: ${item.quantity} - Giá: ${item.price.toLocaleString('vi-VN')} VND - Tổng: ${item.total.toLocaleString('vi-VN')} VND</li>
                 `;
             });
             
@@ -1820,6 +1802,65 @@
             }
         }
 
+        // Update supplier location and travel time when supplier is selected
+        function updateSupplierLocation() {
+            const supplierSelect = document.getElementById('supplierSelect');
+            const selectedSupplierId = supplierSelect.value;
+            
+            if (!selectedSupplierId) {
+                document.getElementById('fromLocation').value = '';
+                document.getElementById('travelTimeResult').textContent = 'Direct travel time will be displayed here when supplier is selected';
+                return;
+            }
+            
+            // Find the selected supplier
+            const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
+            if (selectedSupplier) {
+                // Update the from location with supplier's address
+                document.getElementById('fromLocation').value = selectedSupplier.address;
+                
+                // Display the predefined travel time
+                document.getElementById('travelTimeResult').textContent = `Direct travel time: ${selectedSupplier.travelTime}`;
+                
+                // Update the items dropdown for this supplier
+                updateItemDropdown(selectedSupplier);
+            }
+        }
+        
+        // Update item dropdown based on selected supplier
+        function updateItemDropdown(supplier) {
+            // Get all item rows
+            const itemRows = document.querySelectorAll('.item-row');
+            
+            // Update each item row's dropdown
+            itemRows.forEach(row => {
+                const select = row.querySelector('.item-select');
+                const currentSelectedValue = select.value;
+                
+                // Clear existing options
+                select.innerHTML = '<option value="">Chọn sản phẩm</option>';
+                
+                // Add products from selected supplier
+                supplier.products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${product.description})`;
+                    option.setAttribute('data-price', product.price);
+                    select.appendChild(option);
+                });
+                
+                // Try to restore the previous selection if it exists in the new options
+                if (currentSelectedValue) {
+                    const optionToSelect = Array.from(select.options).find(opt => opt.value === currentSelectedValue);
+                    if (optionToSelect) {
+                        select.value = currentSelectedValue;
+                        // Update the price if an item was selected
+                        updateItemPrice(row.id);
+                    }
+                }
+            });
+        }
+
         // Add item row
         function addItemRow() {
             const container = document.getElementById('itemsContainer');
@@ -1829,12 +1870,22 @@
             itemRow.className = 'item-row';
             itemRow.id = rowId;
             
+            // Get selected supplier
+            const supplierSelect = document.getElementById('supplierSelect');
+            const selectedSupplierId = supplierSelect.value;
+            const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
+            
             // Create item select dropdown
             let itemSelect = '<select class="item-select" onchange="updateItemPrice(\'' + rowId + '\')">';
             itemSelect += '<option value="">Chọn sản phẩm</option>';
-            inventoryItems.forEach(item => {
-                itemSelect += `<option value="${item.id}" data-price="${item.price}">${item.name} (${item.price} VND)</option>`;
-            });
+            
+            // If a supplier is selected, add their products
+            if (selectedSupplier) {
+                selectedSupplier.products.forEach(product => {
+                    itemSelect += `<option value="${product.id}" data-price="${product.price}">${product.name} (${product.description})</option>`;
+                });
+            }
+            
             itemSelect += '</select>';
             
             itemRow.innerHTML = `
@@ -1872,7 +1923,7 @@
             const price = parseFloat(row.querySelector('.item-price').value) || 0;
             const total = (quantity * price).toFixed(2);
             
-            row.querySelector('.item-total').value = total ? total + ' VND' : '';
+            row.querySelector('.item-total').value = total ? total.toLocaleString('vi-VN') + ' VND' : '';
             calculateTotals();
         }
 
@@ -1888,7 +1939,7 @@
             const totals = document.querySelectorAll('.item-total');
             
             totals.forEach(itemTotal => {
-                const value = parseFloat(itemTotal.value.replace(' VND', '')) || 0;
+                const value = parseFloat(itemTotal.value.replace(/[^0-9.]/g, '')) || 0;
                 total += value;
             });
             
@@ -1901,8 +1952,7 @@
             const supplier = document.getElementById('supplierSelect').value;
             const supplierText = document.getElementById('supplierSelect').options[document.getElementById('supplierSelect').selectedIndex].text;
             const deliveryDate = document.getElementById('deliveryDate').value;
-            const shippingAddress = document.getElementById('shippingAddress').value;
-            const travelTime = window.calculatedTravelTime || document.getElementById('travelTimeResult').textContent;
+            const travelTime = document.getElementById('travelTimeResult').textContent.replace('Direct travel time: ', '');
             
             if (!supplier) {
                 alert('Vui lòng chọn nhà cung cấp');
@@ -1914,11 +1964,6 @@
                 return;
             }
             
-            if (!shippingAddress) {
-                alert('Vui lòng nhập địa chỉ giao hàng');
-                return;
-            }
-            
             const items = [];
             document.querySelectorAll('.item-row').forEach(row => {
                 const select = row.querySelector('.item-select');
@@ -1926,9 +1971,13 @@
                 const price = row.querySelector('.item-price').value;
                 
                 if (select.value && quantity && price) {
+                    const selectedOption = select.options[select.selectedIndex];
+                    const productName = selectedOption.text.split(' (')[0];
+                    const productDescription = selectedOption.text.match(/\(([^)]+)\)/)[1];
+                    
                     items.push({
                         itemId: select.value,
-                        itemName: select.options[select.selectedIndex].text.split(' (')[0],
+                        itemName: `${productName} (${productDescription})`,
                         quantity: quantity,
                         price: price,
                         total: (quantity * price).toFixed(2)
@@ -1945,36 +1994,50 @@
             const orderDate = new Date().toISOString().split('T')[0];
             const total = document.getElementById('total').textContent;
             
+            // Get the selected supplier's address
+            const selectedSupplier = suppliers.find(s => s.id === supplier);
+            const shippingAddress = selectedSupplier ? selectedSupplier.address : '';
+            
             // Check if we're editing an existing PO
-            const isEditing = currentPO && currentPO.poNumber === poNumber;
-            
-            // Store the PO data
-            currentPO = {
-                poNumber,
-                supplier: supplierText,
-                deliveryDate,
-                shippingAddress,
-                orderDate: isEditing ? currentPO.orderDate : orderDate, // Keep original order date when editing
-                items,
-                total: total,
-                status: isEditing ? currentPO.status : 'delivery', // Keep existing status when editing
-                travelTime: travelTime,
-                orderImage: isEditing ? currentPO.orderImage : `https://via.placeholder.com/400x400?text=Order+${poNumber}`,
-                qrCodeData: '' // Will be generated below
-            };
-            
-            // Generate QR code data that will show the order image when scanned
-            currentPO.qrCodeData = generateQRCodeData(currentPO);
-            
-            // Update or add to orders array
-            if (isEditing) {
-                const index = orders.findIndex(o => o.poNumber === poNumber);
+            if (isEditingPO && currentPO) {
+                // Update the existing PO
+                currentPO.supplier = supplierText;
+                currentPO.deliveryDate = deliveryDate;
+                currentPO.items = items;
+                currentPO.total = total;
+                currentPO.travelTime = travelTime;
+                currentPO.shippingAddress = shippingAddress;
+                
+                // Update the orders array
+                const index = orders.findIndex(o => o.poNumber === currentPO.poNumber);
                 if (index !== -1) {
                     orders[index] = currentPO;
                 }
+                
+                // Reset editing flag
+                isEditingPO = false;
             } else {
+                // Create a new PO
+                currentPO = {
+                    poNumber,
+                    supplier: supplierText,
+                    deliveryDate,
+                    orderDate: orderDate,
+                    items,
+                    total: total,
+                    status: 'delivery',
+                    travelTime: travelTime,
+                    shippingAddress: shippingAddress,
+                    orderImage: `https://via.placeholder.com/400x400?text=Order+${poNumber}`,
+                    qrCodeData: '' // Will be generated below
+                };
+                
+                // Add to orders array (at the beginning)
                 orders.unshift(currentPO);
             }
+            
+            // Generate QR code data that will show the order image when scanned
+            currentPO.qrCodeData = generateQRCodeData(currentPO);
             
             showConfirmation();
         }
@@ -1983,14 +2046,28 @@
         function editPO() {
             if (!currentPO) return;
             
+            // Set editing flag
+            isEditingPO = true;
+            
             // Show the PO creation page
             showPoCreation();
             
+            // Update form title
+            document.getElementById('poFormTitle').textContent = 'Edit Production Order';
+            
             // Fill in the form with the current PO data
             document.getElementById('poNumber').value = currentPO.poNumber;
-            document.getElementById('supplierSelect').value = currentPO.supplier;
+            
+            // Set supplier selection
+            const supplierSelect = document.getElementById('supplierSelect');
+            for (let i = 0; i < supplierSelect.options.length; i++) {
+                if (supplierSelect.options[i].text === currentPO.supplier) {
+                    supplierSelect.selectedIndex = i;
+                    break;
+                }
+            }
+            
             document.getElementById('deliveryDate').value = currentPO.deliveryDate;
-            document.getElementById('shippingAddress').value = currentPO.shippingAddress;
             
             // Clear any existing items
             document.getElementById('itemsContainer').innerHTML = '';
@@ -2002,14 +2079,19 @@
                 itemRow.className = 'item-row';
                 itemRow.id = rowId;
                 
+                // Get the selected supplier
+                const selectedSupplier = suppliers.find(s => s.name === currentPO.supplier);
+                
                 // Create item select dropdown
                 let itemSelect = '<select class="item-select" onchange="updateItemPrice(\'' + rowId + '\')">';
                 itemSelect += '<option value="">Chọn sản phẩm</option>';
                 
-                inventoryItems.forEach(invItem => {
-                    const selected = invItem.name === item.itemName ? 'selected' : '';
-                    itemSelect += `<option value="${invItem.id}" data-price="${invItem.price}" ${selected}>${invItem.name} (${invItem.price} VND)</option>`;
-                });
+                if (selectedSupplier) {
+                    selectedSupplier.products.forEach(product => {
+                        const selected = item.itemName.includes(product.name) && item.itemName.includes(product.description) ? 'selected' : '';
+                        itemSelect += `<option value="${product.id}" data-price="${product.price}" ${selected}>${product.name} (${product.description})</option>`;
+                    });
+                }
                 
                 itemSelect += '</select>';
                 
@@ -2017,7 +2099,7 @@
                     ${itemSelect}
                     <input type="number" class="item-quantity" min="1" value="${item.quantity}" onchange="calculateRowTotal('${rowId}')">
                     <input type="text" class="item-price" readonly value="${item.price}">
-                    <input type="text" class="item-total" readonly value="${item.total} VND">
+                    <input type="text" class="item-total" readonly value="${parseFloat(item.total).toLocaleString('vi-VN')} VND">
                     <button class="remove-item" onclick="removeItemRow('${rowId}')">×</button>
                 `;
                 
@@ -2029,16 +2111,22 @@
             
             // Set travel time if available
             if (currentPO.travelTime) {
-                document.getElementById('travelTimeResult').textContent = currentPO.travelTime;
-                window.calculatedTravelTime = currentPO.travelTime;
+                document.getElementById('travelTimeResult').textContent = `Direct travel time: ${currentPO.travelTime}`;
             }
             
-            // Set to location if available in shipping address
-            if (currentPO.shippingAddress) {
-                const addressLines = currentPO.shippingAddress.split('\n');
-                if (addressLines.length > 0) {
-                    document.getElementById('toLocation').value = addressLines[addressLines.length - 1];
-                }
+            // Set supplier address if available
+            const selectedSupplier = suppliers.find(s => s.name === currentPO.supplier);
+            if (selectedSupplier) {
+                document.getElementById('fromLocation').value = selectedSupplier.address;
+            }
+        }
+
+        // Edit an existing order from the tracking page
+        function editExistingOrder(poNumber) {
+            const order = orders.find(o => o.poNumber === poNumber);
+            if (order) {
+                currentPO = order;
+                editPO();
             }
         }
 
@@ -2051,7 +2139,14 @@
             document.getElementById('supplierInfoPage').style.display = 'none';
             document.getElementById('orderTrackingPage').style.display = 'flex';
             
-            // Load orders
+            // Initialize QR code data for sample orders if not already done
+            orders.forEach(order => {
+                if (!order.qrCodeData) {
+                    order.qrCodeData = generateQRCodeData(order);
+                }
+            });
+            
+            // Load all orders by default
             filterOrders('all');
             startDateTimeUpdates();
         }
@@ -2061,10 +2156,8 @@
             const ordersList = document.getElementById('ordersList');
             ordersList.innerHTML = '';
             
-            let filteredOrders = orders;
-            if (status !== 'all') {
-                filteredOrders = orders.filter(order => order.status === status);
-            }
+            // Always show all orders regardless of the filter
+            const filteredOrders = orders;
             
             filteredOrders.forEach(order => {
                 const row = document.createElement('tr');
@@ -2109,7 +2202,9 @@
                 }
                 
                 // Shorten shipping address for display
-                const shortAddress = order.shippingAddress.split('\n')[0] + '...';
+                const shortAddress = order.shippingAddress.length > 30 ? 
+                    order.shippingAddress.substring(0, 30) + '...' : 
+                    order.shippingAddress;
                 
                 row.innerHTML = `
                     <td>${order.poNumber}</td>
@@ -2135,15 +2230,6 @@
                     generateQRCode(qrCodeId, order.qrCodeData);
                 }, 100);
             });
-        }
-
-        // Edit an existing order from the tracking page
-        function editExistingOrder(poNumber) {
-            const order = orders.find(o => o.poNumber === poNumber);
-            if (order) {
-                currentPO = order;
-                editPO();
-            }
         }
 
         // Update order status
@@ -2178,7 +2264,6 @@
             document.getElementById('confirmationSupplier').textContent = currentPO.supplier;
             document.getElementById('confirmationDeliveryDate').textContent = formatDate(currentPO.deliveryDate);
             document.getElementById('confirmationOrderDate').textContent = formatDate(currentPO.orderDate);
-            document.getElementById('confirmationShippingAddress').textContent = currentPO.shippingAddress;
             document.getElementById('confirmationTravelTime').textContent = currentPO.travelTime || 'Không tính toán';
             
             // Set items
@@ -2190,8 +2275,8 @@
                 row.innerHTML = `
                     <td>${item.itemName}</td>
                     <td>${item.quantity}</td>
-                    <td>${item.price} VND</td>
-                    <td>${item.total} VND</td>
+                    <td>${parseFloat(item.price).toLocaleString('vi-VN')} VND</td>
+                    <td>${parseFloat(item.total).toLocaleString('vi-VN')} VND</td>
                 `;
                 itemsContainer.appendChild(row);
             });
@@ -2227,6 +2312,7 @@
 
         // Initialize PO creation page
         function initPOCreation() {
+            document.getElementById('poFormTitle').textContent = 'Create Production Order';
             document.getElementById('poNumber').value = generatePONumber();
             // Set default delivery date to tomorrow
             const tomorrow = new Date();
@@ -2234,105 +2320,20 @@
             document.getElementById('deliveryDate').valueAsDate = tomorrow;
             // Clear any existing items
             document.getElementById('itemsContainer').innerHTML = '';
-            // Clear shipping address
-            document.getElementById('shippingAddress').value = '';
+            // Reset supplier selection
+            document.getElementById('supplierSelect').selectedIndex = 0;
             // Add first item row
             addItemRow();
             // Reset totals
             calculateTotals();
-            // Set default from location
-            document.getElementById('fromLocation').value = 'số 15 đường An Trì, Phường Hùng Vương, Quận Hồng Bàng, thành phố Hải Phòng';
-            // Clear to location
-            document.getElementById('toLocation').value = '';
+            // Set default to location
+            document.getElementById('toLocation').value = 'số 15 đường An Trì, Phường Hùng Vương, Quận Hồng Bàng, thành phố Hải Phòng';
+            // Clear from location
+            document.getElementById('fromLocation').value = '';
             // Reset travel time result
-            document.getElementById('travelTimeResult').textContent = 'Thời gian vận chuyển sẽ được tính toán ở đây';
-            // Clear any previous calculated time
-            window.calculatedTravelTime = null;
-        }
-
-        // Google Maps variables
-        let map;
-        let directionsService;
-        let directionsRenderer;
-        let geocoder;
-        let autocomplete;
-
-        // Initialize Google Maps when window loads
-        window.onload = function() {
-            initMap();
-            };
-
-
-        // Initialize Google Maps
-        function initMap() {
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            geocoder = new google.maps.Geocoder();
-            
-            // Initialize autocomplete for the "to" location input
-            const toLocationInput = document.getElementById('toLocation');
-            autocomplete = new google.maps.places.Autocomplete(toLocationInput);
-        }
-
-        // Calculate travel time between locations
-        function calculateTravelTime() {
-            const fromLocation = document.getElementById('fromLocation').value;
-            const toLocation = document.getElementById('toLocation').value;
-            const resultDiv = document.getElementById('travelTimeResult');
-            
-            if (!toLocation) {
-                resultDiv.textContent = 'Vui lòng nhập địa chỉ giao hàng';
-                return;
-            }
-            
-            resultDiv.textContent = 'Đang tính toán thời gian vận chuyển...';
-            
-            directionsService.route(
-                {
-                    origin: fromLocation,
-                    destination: toLocation,
-                    travelMode: 'DRIVING'
-                },
-                (response, status) => {
-                    if (status === 'OK') {
-                        const route = response.routes[0];
-                        const duration = route.legs[0].duration.text;
-                        const durationInMinutes = route.legs[0].duration.value / 60;
-                        
-                        // Apply safety factor of 1
-                        const estimated = Math.round(durationInMinutes * 1);
-                        const hours1 = Math.floor(estimated / 60);
-                        const minutes1 = estimated % 60;
-                        
-                        let estimatedText = '';
-                        if (hours1 > 0) {
-                            estimatedText += `${hours1} giờ `;
-                        }
-                        estimatedText += `${minutes1} phút`;
-
-                        // Apply safety factor of 1.5
-                        const estimatedTime = Math.round(durationInMinutes * 2.5);
-                        const hours = Math.floor(estimatedTime / 60);
-                        const minutes = estimatedTime % 60;
-                        
-                        let estimatedTimeText = '';
-                        if (hours > 0) {
-                            estimatedTimeText += `${hours} giờ `;
-                        }
-                        estimatedTimeText += `${minutes} phút`;
-                        
-                        resultDiv.innerHTML = `
-                            <strong>Thời gian di chuyển trực tiếp:</strong> ${estimatedText}<br>
-                            <strong>Thời gian giao hàng ước tính:</strong> ${estimatedTimeText}
-                        `;
-                        
-                        // Store the calculated time in a variable that will be used when creating the PO
-                        window.calculatedTravelTime = estimatedTimeText;
-                    } else {
-                        resultDiv.textContent = 'Lỗi khi tính toán thời gian: ' + status;
-                    }
-                }
-            );
+            document.getElementById('travelTimeResult').textContent = 'Direct travel time will be displayed here when supplier is selected';
+            // Reset editing flag
+            isEditingPO = false;
         }
 
         // Show supplier information page
@@ -2365,6 +2366,7 @@
                     <p><strong>Email:</strong> ${supplier.email}</p>
                     <p><strong>Điện thoại:</strong> ${supplier.phone}</p>
                     <p><strong>Địa chỉ:</strong> ${supplier.address}</p>
+                    <p><strong>Thời gian vận chuyển:</strong> ${supplier.travelTime}</p>
                 `;
                 
                 supplierList.appendChild(supplierCard);
@@ -2481,7 +2483,7 @@
                     ];
                     const response = responses[Math.floor(Math.random() * responses.length)];
                     
-                    supplierMessages[supplierName].push({
+                    supplierMessages[currentChatSupplier].push({
                         sender: 'supplier',
                         text: response
                     });
@@ -2584,10 +2586,21 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize QR code data for sample orders
+            initializeSampleOrders();
             startDateTimeUpdates();
             // Hide chat bubble initially (will show after login)
             document.getElementById('chatBubble').style.display = 'none';
         });
+
+        // Initialize sample orders with QR code data
+        function initializeSampleOrders() {
+            orders.forEach(order => {
+                if (!order.qrCodeData) {
+                    order.qrCodeData = generateQRCodeData(order);
+                }
+            });
+        }
     </script>
 </body>
 </html>
